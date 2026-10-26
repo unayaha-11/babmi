@@ -15,19 +15,21 @@ main{max-width:560px;margin:0 auto;padding:48px 24px 96px}
 h1,h2,h3,p{margin:0}
 a{color:inherit}
 a:focus-visible,button:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px solid var(--ink);outline-offset:3px;border-radius:12px}
+.hero{visibility:hidden}
+.ready .hero{visibility:visible}
 .hero{display:flex;flex-direction:column;align-items:center;text-align:center;background:#FFFFFF;padding:36px 0 32px}
 .circle{border:3px solid #111111;border-radius:50%;overflow:hidden;display:grid;place-items:center;background:#FFFFFF}
 .circle img{width:100%;height:100%;object-fit:cover;display:block}
-.avatar{width:min(34vw,128px);aspect-ratio:1;font-size:2.6rem;font-weight:900}
+.avatar{width:min(34vw,128px);aspect-ratio:1;font-size:2.6rem;font-weight:900;border-width:1.5px;background:var(--fill)}
 h1{font-family:"Pencerio","Noto Sans KR",system-ui,sans-serif;font-synthesis:none;font-size:clamp(2.6rem,11vw,3.6rem);font-weight:50;letter-spacing:.01em;line-height:1.2;margin-top:24px}
 .tool-label{margin-top:6px;font-size:.8rem;font-weight:500;letter-spacing:.08em;color:var(--muted)}
 .role{font-size:1.05rem;font-weight:500;letter-spacing:.02em;margin-top:2px}
 .bio{color:var(--muted);margin-top:14px;max-width:34ch;font-size:.95rem}
 .platforms{display:flex;justify-content:center;flex-wrap:wrap;gap:12px;list-style:none;margin:28px 0 0;padding:0}
-.platforms a{display:grid;place-items:center;width:44px;height:44px;border-width:2px;text-decoration:none;font-weight:900;font-size:.95rem;transition:background .15s,color .15s}
-.platforms a:hover{background:#111111;color:#FFFFFF}
-.platforms a.hasicon img{padding:8px;object-fit:contain}
-.platforms a.hasicon:hover{background:var(--fill);color:inherit}
+.platforms a{display:grid;place-items:center;width:48px;height:48px;border:0;background:var(--fill);color:#111111;text-decoration:none;font-weight:900;font-size:.95rem;transition:transform .15s}
+.platforms a:hover{transform:scale(1.08)}
+.avatar img,.platforms a img{opacity:0;transition:opacity .35s}
+.avatar img.on,.platforms a img.on{opacity:1}
 /* 첫 진입 애니메이션: 사진 → 이름(좌→우 필기) → 사용 툴 → 소개 → 플랫폼 */
 @keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
 @keyframes write{
@@ -35,12 +37,12 @@ h1{font-family:"Pencerio","Noto Sans KR",system-ui,sans-serif;font-synthesis:non
   6%{opacity:1}
   100%{opacity:1;clip-path:inset(-25% -2% -25% 0);transform:none}
 }
-.avatar{animation:rise .8s ease-out .1s both}
-.hero h1{animation:write 1.5s cubic-bezier(.45,.05,.3,1) .7s both}
-.tool-label{animation:rise .7s ease-out 2.0s both}
-.role{animation:rise .7s ease-out 2.15s both}
-.bio{animation:rise .7s ease-out 2.4s both}
-.platforms{animation:rise .7s ease-out 2.7s both}
+.ready .avatar{animation:rise .8s ease-out .1s both}
+.ready .hero h1{animation:write 1.5s cubic-bezier(.45,.05,.3,1) .7s both}
+.ready .tool-label{animation:rise .7s ease-out 2.0s both}
+.ready .role{animation:rise .7s ease-out 2.15s both}
+.ready .bio{animation:rise .7s ease-out 2.4s both}
+.ready .platforms{animation:rise .7s ease-out 2.7s both}
 section{margin-top:72px}
 h2{font-size:1.1rem;font-weight:900;margin-bottom:14px}
 .works{list-style:none;margin:0 -24px;padding:0;display:flex;overflow-x:auto;scroll-snap-type:x mandatory;overscroll-behavior-x:contain;scrollbar-width:none}
@@ -84,6 +86,7 @@ footer{margin-top:64px;text-align:center;color:var(--muted);font-size:.9rem}
 .btn.pri{background:#111;color:#fff}
 .btn.del{border-color:#C0262D;color:#C0262D}
 </style>
+<noscript><style>.hero{visibility:visible}</style></noscript>
 </head>
 <body>
 <main>
@@ -138,21 +141,25 @@ const el = (t, c, x) => { const e = document.createElement(t); if (c) e.classNam
 const safeUrl = u => /^(https?:\/\/|\/|#)/.test(u || "") ? u : "#";
 const link = (a, u) => { u = safeUrl(u); a.href = u; if (u !== "#") { a.target = "_blank"; a.rel = "noopener"; } return a; };
 const fav = u => { try { const h = new URL(u); return /^https?:$/.test(h.protocol) ? "https://www.google.com/s2/favicons?sz=128&domain_url=" + encodeURIComponent(h.origin) : ""; } catch (e) { return ""; } };
-const pic = (src, alt) => { const i = el("img"); i.src = /^(https?:\/\/|\/)/.test(src) ? src : ""; i.alt = alt || ""; i.loading = "lazy"; return i; };
+const pic = (src, alt, eager) => { const i = el("img"); i.src = /^(https?:\/\/|\/)/.test(src) ? src : ""; i.alt = alt || ""; i.loading = eager ? "eager" : "lazy"; return i; };
+const reveal = im => { const on = () => im.classList.add("on"); if (im.complete && im.naturalWidth) on(); else im.addEventListener("load", on, {once: true}); };
+let rendered = false;
 
 /* ---------- 공개 화면 ---------- */
 function render() {
   document.title = data.name + " · Portfolio";
   $("name").textContent = data.name; $("role").textContent = data.role; $("bio").textContent = data.bio;
-  $("avatar").replaceChildren(); if (data.avatar) $("avatar").appendChild(pic(data.avatar, data.name + " 프로필 사진")); else $("avatar").textContent = (data.name || "").charAt(0);
+  rendered = true;
+  const av = $("avatar"), initial = (data.name || "").charAt(0); av.replaceChildren();
+  if (data.avatar) { const im = pic(data.avatar, data.name + " 프로필 사진", true); im.onerror = () => { av.replaceChildren(); av.textContent = initial; }; av.appendChild(im); reveal(im); } else av.textContent = initial;
 
   $("platforms").replaceChildren();
   data.platforms.forEach(p => {
     const li = el("li"), a = link(el("a", "circle"), p.url);
     a.setAttribute("aria-label", p.name); a.title = p.name;
-    const letter = () => { a.replaceChildren(); a.classList.remove("hasicon"); a.textContent = (p.name || "?").charAt(0); };
+    const letter = () => { a.replaceChildren(); a.textContent = (p.name || "?").charAt(0); };
     const src = p.icon || fav(p.url);   // 직접 올린 아이콘이 있으면 우선, 없으면 링크 사이트의 파비콘
-    if (src) { const im = pic(src, ""); im.onerror = letter; a.classList.add("hasicon"); a.appendChild(im); } else letter();
+    if (src) { const im = pic(src, "", true); im.onerror = letter; a.appendChild(im); reveal(im); } else letter();
     li.appendChild(a); $("platforms").appendChild(li);
   });
 
@@ -314,7 +321,19 @@ function closeAdmin() {
 $("adminLink").addEventListener("click", e => { e.preventDefault(); openAdmin(); });
 if (location.hash === "#admin") openAdmin();
 
-render(); load();
+/* 데이터와 프로필 사진이 준비된 뒤에 한 번에 보여주고 애니메이션 시작 */
+const avatarReady = () => new Promise(res => {
+  const im = $("avatar").querySelector("img");
+  if (!im || (im.complete && im.naturalWidth)) return res();
+  im.addEventListener("load", res, {once: true}); im.addEventListener("error", res, {once: true});
+  setTimeout(res, 2500);
+});
+(async function boot() {
+  if (sb) await Promise.race([load(), new Promise(r => setTimeout(r, 3500))]);
+  if (!rendered) render();
+  await avatarReady();
+  document.documentElement.classList.add("ready");
+})();
 </script>
 </body>
 </html>
