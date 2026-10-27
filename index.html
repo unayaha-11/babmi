@@ -76,25 +76,52 @@ footer{margin-top:64px;text-align:center;color:var(--muted);font-size:.9rem}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important;animation:none!important}}
 
 /* admin */
-#admin{position:fixed;inset:0;z-index:50;background:#fff;color:#111;overflow:auto;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
-#admin[hidden]{display:none}
-.adm{max-width:560px;margin:0 auto;padding:0 24px 80px}
-.admtop{display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:#fff;padding:14px 0;border-bottom:1px solid var(--line);z-index:1}
-#adStatus{min-height:1.7em;font-size:.9rem;color:var(--muted);margin:10px 0 0}
-#adStatus.err{color:#C0262D}
-.adm h3{font-size:1.05rem;font-weight:900;margin:32px 0 10px}
-.f{display:grid;gap:4px;margin-bottom:12px;font-size:.9rem}
-.f input,.f textarea{width:100%;font:inherit;padding:10px 12px;border:2px solid #111;border-radius:12px;background:#fff;color:#111}
-.f textarea{min-height:84px;resize:vertical}
-.f input[type=file]{border:0;padding:4px 0;font-size:.85rem}
-.thumbbox{display:grid;place-items:center;min-height:72px;border:2px dashed var(--line);border-radius:12px;background:var(--fill);overflow:hidden}
-.thumbbox img{display:block;max-width:100%;max-height:140px;object-fit:contain}
-.thumbbox small{color:var(--muted)}
-.item{border:2px solid var(--line);border-radius:16px;padding:14px;margin-bottom:12px}
-.row{display:flex;gap:8px;flex-wrap:wrap}
-.btn{font:inherit;font-weight:500;padding:8px 16px;border:2px solid #111;border-radius:999px;background:#fff;color:#111;cursor:pointer}
+#admin{position:fixed;inset:0;z-index:50;background:#fff;color:#111;overflow:auto;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);font-size:15px;color-scheme:light}
+.adm{max-width:560px;margin:0 auto;padding:0 16px 96px}
+.admtop{position:sticky;top:0;z-index:3;background:#fff;padding-top:12px;border-bottom:1px solid #e6e6e9}
+.admhead{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.admhead strong{flex:1;font-size:1.05rem}
+.row{display:flex;gap:8px;align-items:center}
+.tabs{display:flex;gap:0;overflow-x:auto;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tabs button{flex:0 0 auto;font:inherit;font-weight:500;background:none;border:0;border-bottom:3px solid transparent;border-radius:0;padding:9px 8px;font-size:.93rem;color:#6b6b73;cursor:pointer}
+@media (max-width:380px){.tabs button{padding:9px 5px;font-size:.9rem}}
+.tabs button[aria-selected="true"]{color:#111;border-bottom-color:#111;font-weight:700}
+.panel{padding-top:14px}
+.f{display:block;margin-bottom:14px}
+.f>span{display:block;font-size:.8rem;color:#6b6b73;margin-bottom:5px}
+.hint{font-size:.8rem;color:#6b6b73;margin:0 0 10px;line-height:1.5}
+.adm input:not([type="file"]),.adm textarea{width:100%;font:inherit;padding:9px 11px;border:1px solid #cfcfd6;border-radius:10px;background:#fff;color:#111}
+.adm textarea{resize:vertical;line-height:1.55}
+.btn{font:inherit;font-weight:500;padding:8px 15px;border:1.5px solid #111;border-radius:999px;background:#fff;color:#111;cursor:pointer}
 .btn.pri{background:#111;color:#fff}
 .btn.del{border-color:#C0262D;color:#C0262D}
+.btn.sm{padding:5px 12px;font-size:.85rem}
+.btn.up{position:relative;display:inline-block;overflow:hidden}
+.sb{flex:none;width:30px;height:30px;padding:0;border:1px solid #cfcfd6;border-radius:8px;background:#fff;color:#111;cursor:pointer;font:inherit;line-height:1}
+.pv{position:relative;flex:none;display:grid;place-items:center;overflow:hidden;width:40px;height:40px;border-radius:8px;background:#f1f1f3;color:#6b6b73;font-size:.75rem;font-weight:700}
+.pv.r{border-radius:50%;cursor:pointer}
+.pv.big{width:68px;height:68px;border-radius:14px}
+.pv img{display:block;width:100%;height:100%;object-fit:cover}
+.pv:focus-within,.btn.up:focus-within{outline:3px solid #111;outline-offset:2px}
+.sr{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer}
+.pick{display:flex;align-items:center;gap:10px}
+.lrow{display:grid;grid-template-columns:40px 1fr auto;gap:6px 8px;align-items:center;padding:8px 0;border-bottom:1px solid #eee}
+.lrow .url{grid-column:2 / 4}
+.acts{display:flex;gap:4px}
+.links{margin-bottom:4px}
+.links>.btn{margin-top:10px}
+.card{border:1px solid #e1e1e6;border-radius:12px;margin-bottom:8px;overflow:hidden}
+.card.open{border-color:#111}
+.chead{display:flex;align-items:center;gap:4px;padding:6px 8px 6px 6px}
+.ctog{flex:1;min-width:0;display:flex;align-items:center;gap:10px;background:none;border:0;font:inherit;text-align:left;padding:2px;color:#111;cursor:pointer}
+.cname{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500}
+.chev{color:#6b6b73}
+.cbody{padding:12px 12px 14px;border-top:1px solid #eee}
+.cbody>.btn.del{margin-top:4px}
+#adToast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom,0px));max-width:calc(100% - 32px);background:#111;color:#fff;padding:10px 18px;border-radius:999px;font-size:.9rem;z-index:60;box-shadow:0 4px 16px rgba(0,0,0,.25)}
+#adToast[hidden]{display:none}
+#adToast.err{background:#C0262D}
 </style>
 <noscript><style>.hero{visibility:visible}</style></noscript>
 </head>
@@ -129,7 +156,7 @@ footer{margin-top:64px;text-align:center;color:var(--muted);font-size:.9rem}
   <article id="dBody"></article>
 </main>
 
-<div id="admin" hidden role="dialog" aria-label="관리자"><div class="adm" id="admBody"></div></div>
+<div id="admin" hidden role="dialog" aria-label="관리자"><div class="adm" id="admBody"></div><div id="adToast" hidden role="status"></div></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js"></script>
 <script>
@@ -264,15 +291,16 @@ async function load() {
 }
 
 /* ---------- 관리자 ---------- */
-const status = (msg, err) => { const s = $("adStatus"); if (s) { s.textContent = msg; s.className = err ? "err" : ""; } };
-const LISTS = {
-  platforms: {title: "활동 플랫폼", blank: {name: "", url: "", icon: ""},
-    fields: [["name", "플랫폼 이름"], ["url", "내 프로필 링크"], ["icon", "아이콘 이미지 (선택 · 비워 두면 링크 사이트의 파비콘이 자동으로 표시돼요)", "img"]]},
-  works: {title: "런칭 작품 (정사각형 썸네일 → 누르면 상세페이지)", blank: {title: "", img: "", desc: "", links: []},
-    fields: [["title", "작품 제목 (상세페이지에 큰 글자로 표시)"], ["img", "썸네일 이미지", "img"], ["links", "작품 링크 (여러 개 가능)", "links"], ["desc", "상세 설명", "area"]]},
-  gallery: {title: "개인 제작 포트폴리오", blank: {title: "", url: "", img: ""},
-    fields: [["title", "제목"], ["url", "링크 주소"], ["img", "썸네일 이미지", "img"]]}
+let tab = "profile", openKey = null, dirty = false, toastT;
+const TABS = [["profile", "프로필"], ["platforms", "플랫폼"], ["works", "런칭 작품"], ["gallery", "포트폴리오"], ["misc", "기타"]];
+const status = (msg, err) => {
+  const t = $("adToast"); if (!t) return;
+  t.textContent = msg; t.className = err ? "err" : ""; t.hidden = false;
+  clearTimeout(toastT); toastT = setTimeout(() => { t.hidden = true; }, err ? 6000 : 3000);
 };
+const dirt = () => { dirty = true; const s = $("adSave"); if (s) s.textContent = "저장 ●"; };
+const btn = (label, cls, fn) => { const x = el("button", "btn " + (cls || ""), label); x.type = "button"; x.onclick = fn; return x; };
+const sbtn = (label, aria, fn) => { const x = el("button", "sb", label); x.type = "button"; x.setAttribute("aria-label", aria); x.title = aria; x.onclick = fn; return x; };
 
 async function upload(file) {
   const ext = (file.name.split(".").pop() || "png").toLowerCase().replace(/[^a-z0-9]/g, "");
@@ -281,76 +309,157 @@ async function upload(file) {
   if (error) throw error;
   return sb.storage.from("portfolio").getPublicUrl(path).data.publicUrl;
 }
-
-function field(parent, obj, key, label, kind) {
-  if (kind === "img") { imgField(parent, obj, key, label); return; }
-  if (kind === "links") { linksField(parent, obj, key, label); return; }
-  const w = el("label", "f"); w.appendChild(el("span", "", label));
-  const i = el(kind === "area" ? "textarea" : "input"); i.value = obj[key] || "";
-  i.oninput = () => { obj[key] = i.value; };
-  w.appendChild(i);
-  parent.appendChild(w);
+async function doUpload(file, obj, key, after) {
+  if (!file) return;
+  if (!file.type.startsWith("image/")) { status("이미지 파일만 올릴 수 있어요.", true); return; }
+  if (file.size > 10 * 1024 * 1024) { status("10MB 이하의 이미지만 올릴 수 있어요.", true); return; }
+  status("이미지 올리는 중…");
+  try { obj[key] = await upload(file); dirt(); after(); status("이미지를 올렸어요. 저장을 눌러 주세요."); }
+  catch (e) { status("이미지 업로드 실패: " + e.message, true); }
 }
 
-/* 작품 링크: 프로필 플랫폼과 같은 방식 (링크 주소 → 파비콘 자동, 필요하면 아이콘 직접 업로드) */
-function linksField(parent, obj, key, label) {
-  const w = el("div", "f"); w.appendChild(el("span", "", label));
-  const arr = obj[key] = obj[key] || [];
+/* ----- 작은 부품들 ----- */
+function input(obj, key, ph, o = {}) {
+  const i = el(o.area ? "textarea" : "input");
+  if (o.area) i.rows = o.rows || 4; else i.type = o.type || "text";
+  i.value = obj[key] || ""; i.placeholder = ph || ""; i.setAttribute("aria-label", ph || key);
+  if (o.ac) i.autocomplete = o.ac;
+  i.oninput = () => { obj[key] = i.value; if (!o.plain) dirt(); if (o.on) o.on(i.value); };
+  return i;
+}
+function labeled(label, node) { const w = el("div", "f"); w.appendChild(el("span", "", label)); w.appendChild(node); return w; }
+
+/* 이미지 선택: 미리보기 + [업로드/변경] + [지우기] (외부 링크 입력 없이 파일 업로드만) */
+function picker(obj, key, o = {}) {
+  const row = el("div", "pick"), pv = el("div", "pv" + (o.big ? " big" : ""));
+  const lab = el("label", "btn sm up"), lt = document.createTextNode("");
+  const f = el("input"); f.type = "file"; f.accept = "image/*"; f.className = "sr"; lab.append(lt, f);
+  const del = btn("지우기", "del sm", () => { obj[key] = ""; dirt(); show(); });
+  const show = () => {
+    pv.replaceChildren(); if (obj[key]) pv.appendChild(pic(obj[key], "", true)); else pv.textContent = "없음";
+    lt.nodeValue = obj[key] ? "변경" : "업로드"; del.hidden = !obj[key];
+  };
+  f.onchange = () => { doUpload(f.files[0], obj, key, show); f.value = ""; };
+  show(); row.append(pv, lab, del); return row;
+}
+
+/* 링크 한 줄: [아이콘] [이름] [↺ ↑ ↓ ✕] / [주소]  — 아이콘을 누르면 직접 업로드, 비우면 파비콘 자동 */
+function linkRow(arr, idx) {
+  const it = arr[idx], r = el("div", "lrow");
+  const ico = el("label", "pv r"); ico.title = "눌러서 아이콘 직접 올리기 (선택)";
+  const f = el("input"); f.type = "file"; f.accept = "image/*"; f.className = "sr";
+  const reset = sbtn("↺", "직접 올린 아이콘 지우기 (파비콘으로 되돌리기)", () => { it.icon = ""; dirt(); showIco(); });
+  const showIco = () => {
+    ico.replaceChildren(); const src = it.icon || fav(it.url);
+    if (src) ico.appendChild(pic(src, "", true)); else ico.textContent = (it.name || "?").charAt(0);
+    ico.appendChild(f); reset.hidden = !it.icon;
+  };
+  f.onchange = () => { doUpload(f.files[0], it, "icon", showIco); f.value = ""; };
+  const name = input(it, "name", "이름 (예: 제타)"), url = input(it, "url", "https://링크 주소", {type: "url"});
+  url.addEventListener("change", showIco);
+  const move = d => () => { const j = idx + d; if (j < 0 || j >= arr.length) return; [arr[idx], arr[j]] = [arr[j], arr[idx]]; dirt(); keep(); };
+  const acts = el("div", "acts");
+  acts.append(reset, sbtn("↑", "위로", move(-1)), sbtn("↓", "아래로", move(1)), sbtn("✕", "삭제", () => { arr.splice(idx, 1); dirt(); keep(); }));
+  url.classList.add("url"); showIco();
+  r.append(ico, name, acts, url); return r;
+}
+function linkList(arr) {
+  const box = el("div", "links");
+  arr.forEach((_, i) => box.appendChild(linkRow(arr, i)));
+  box.appendChild(btn("+ 링크 추가", "sm", () => { arr.push({name: "", url: "", icon: ""}); dirt(); keep(); }));
+  return box;
+}
+
+/* 접이식 카드 목록 (작품 / 포트폴리오): 한 번에 하나만 펼쳐서 편집 */
+const CARDS = {
+  works: {blank: {title: "", img: "", desc: "", links: []},
+    build: (b, it, nm) => {
+      b.appendChild(labeled("제목 (상세페이지에 큰 글자로 표시)", input(it, "title", "작품 제목", {on: v => { nm.textContent = v || "(제목 없음)"; }})));
+      b.appendChild(labeled("썸네일 (정사각형)", picker(it, "img")));
+      const lw = labeled("작품 링크 (여러 개 가능)", linkList(it.links = it.links || []));
+      lw.insertBefore(el("p", "hint", "주소만 넣으면 파비콘이 자동으로 나와요. 동그란 아이콘을 누르면 직접 올릴 수 있어요."), lw.children[1]);
+      b.appendChild(lw);
+      b.appendChild(labeled("상세 설명", input(it, "desc", "작품 설명", {area: true, rows: 5})));
+    }},
+  gallery: {blank: {title: "", url: "", img: ""},
+    build: (b, it, nm) => {
+      b.appendChild(labeled("제목", input(it, "title", "제목", {on: v => { nm.textContent = v || "(제목 없음)"; }})));
+      b.appendChild(labeled("링크 주소", input(it, "url", "https://링크 주소", {type: "url"})));
+      b.appendChild(labeled("썸네일", picker(it, "img")));
+    }}
+};
+function cardList(key) {
+  const cfg = CARDS[key], arr = data[key], box = el("div");
   arr.forEach((it, idx) => {
-    const box = el("div", "item");
-    field(box, it, "name", "링크 이름 (예: 제타, 크랙)"); field(box, it, "url", "작품 링크 주소");
-    field(box, it, "icon", "아이콘 이미지 (선택 · 비워 두면 링크 사이트의 파비콘이 자동으로 표시돼요)", "img");
-    const r = el("div", "row");
-    const move = d => () => { const j = idx + d; if (j < 0 || j >= arr.length) return; [arr[idx], arr[j]] = [arr[j], arr[idx]]; keep(); };
-    r.append(btn("↑", "", move(-1)), btn("↓", "", move(1)), btn("삭제", "del", () => { arr.splice(idx, 1); keep(); }));
-    box.appendChild(r); w.appendChild(box);
+    const k = key + ":" + idx, open = openKey === k, card = el("div", "card" + (open ? " open" : "")), head = el("div", "chead");
+    const nm = el("span", "cname", it.title || "(제목 없음)"), th = el("span", "pv");
+    if (it.img) th.appendChild(pic(it.img, "", true));
+    const tog = el("button", "ctog"); tog.type = "button"; tog.setAttribute("aria-expanded", String(open));
+    tog.append(th, nm, el("span", "chev", open ? "▾" : "▸"));
+    tog.onclick = () => { openKey = open ? null : k; keep(); };
+    const move = d => () => {
+      const j = idx + d; if (j < 0 || j >= arr.length) return;
+      [arr[idx], arr[j]] = [arr[j], arr[idx]];
+      if (openKey === k) openKey = key + ":" + j; else if (openKey === key + ":" + j) openKey = k;
+      dirt(); keep();
+    };
+    head.append(tog, sbtn("↑", "위로", move(-1)), sbtn("↓", "아래로", move(1))); card.appendChild(head);
+    if (open) {
+      const body = el("div", "cbody"); cfg.build(body, it, nm);
+      body.appendChild(btn("이 항목 삭제", "del sm", () => { if (!confirm("이 항목을 삭제할까요?")) return; arr.splice(idx, 1); openKey = null; dirt(); keep(); }));
+      card.appendChild(body);
+    }
+    box.appendChild(card);
   });
-  w.appendChild(btn("+ 링크 추가", "", () => { arr.push({name: "", url: "", icon: ""}); keep(); }));
-  parent.appendChild(w);
+  box.appendChild(btn("+ 추가", "", () => { arr.push(structuredClone(cfg.blank)); openKey = key + ":" + (arr.length - 1); dirt(); keep(); }));
+  return box;
 }
-const keep = () => { const a = $("admin"), y = a.scrollTop; buildAdmin(); a.scrollTop = y; };
 
-/* 이미지는 외부 링크 입력 없이 파일 업로드만 가능 */
-function imgField(parent, obj, key, label) {
-  const w = el("div", "f"); w.appendChild(el("span", "", label));
-  const prev = el("div", "thumbbox"), show = () => {
-    prev.replaceChildren();
-    if (obj[key]) prev.appendChild(pic(obj[key], "")); else prev.appendChild(el("small", "", "등록된 이미지 없음"));
-  };
-  show(); w.appendChild(prev);
-  const f = el("input"); f.type = "file"; f.accept = "image/*";
-  f.onchange = async () => {
-    const file = f.files[0]; if (!file) return;
-    if (!file.type.startsWith("image/")) { status("이미지 파일만 올릴 수 있어요.", true); f.value = ""; return; }
-    if (file.size > 10 * 1024 * 1024) { status("10MB 이하의 이미지만 올릴 수 있어요.", true); f.value = ""; return; }
-    status("이미지 올리는 중…");
-    try { obj[key] = await upload(file); show(); status("이미지를 올렸어요. 맨 위 ‘저장’을 눌러 주세요."); }
-    catch (e) { status("이미지 업로드 실패: " + e.message, true); }
-    f.value = "";
-  };
-  w.appendChild(f);
-  if (obj[key]) w.appendChild(btn("이미지 지우기", "del", () => { obj[key] = ""; show(); status("이미지를 지웠어요. 맨 위 ‘저장’을 눌러 주세요."); }));
-  parent.appendChild(w);
+/* ----- 탭별 화면 ----- */
+const PANELS = {
+  profile: p => {
+    p.appendChild(labeled("프로필 사진", picker(data, "avatar", {big: true})));
+    p.appendChild(labeled("필명", input(data, "name", "필명")));
+    p.appendChild(labeled("사용 툴 (Use Tool 아래에 표시)", input(data, "role", "예: NAI · CLIP STUDIO PAINT")));
+    p.appendChild(labeled("한 줄 소개", input(data, "bio", "소개글", {area: true, rows: 3})));
+    p.appendChild(labeled("문의 이메일", input(data, "contact", "you@example.com", {type: "email"})));
+  },
+  platforms: p => {
+    p.appendChild(el("p", "hint", "주소만 넣으면 사이트 파비콘이 자동으로 나와요. 동그란 아이콘을 누르면 직접 올릴 수 있어요."));
+    p.appendChild(linkList(data.platforms));
+  },
+  works: p => p.appendChild(cardList("works")),
+  gallery: p => p.appendChild(cardList("gallery")),
+  misc: p => {
+    p.appendChild(labeled("‘전체 작업 보러 가기’ 버튼 주소", input(data, "allWorksUrl", "https://링크 주소", {type: "url"})));
+    const r = el("div", "row");
+    r.appendChild(btn("로그아웃", "", async () => {
+      if (dirty && !confirm("저장하지 않은 변경이 있어요. 로그아웃할까요?")) return;
+      await sb.auth.signOut(); dirty = false; buildLogin();
+    }));
+    p.appendChild(r);
+  }
+};
+function renderPanel() {
+  const p = $("adPanel"); p.replaceChildren();
+  document.querySelectorAll(".tabs button").forEach(t => t.setAttribute("aria-selected", String(t.dataset.k === tab)));
+  PANELS[tab](p);
 }
+const keep = () => { const a = $("admin"), y = a.scrollTop; renderPanel(); a.scrollTop = y; };
 
 function shell(title) {
   const b = $("admBody"); b.replaceChildren();
-  const top = el("div", "admtop"); top.appendChild(el("strong", "", title));
-  const bar = el("div", "row"); top.appendChild(bar); b.appendChild(top);
-  const st = el("p"); st.id = "adStatus"; st.setAttribute("role", "status"); b.appendChild(st);
-  return {b, bar};
+  const top = el("div", "admtop"), head = el("div", "admhead"), bar = el("div", "row");
+  head.append(el("strong", "", title), bar); top.appendChild(head); b.appendChild(top);
+  return {b, bar, top};
 }
-const btn = (label, cls, fn) => { const x = el("button", "btn " + (cls || ""), label); x.type = "button"; x.onclick = fn; return x; };
-
 function buildLogin(msg) {
   const {b, bar} = shell("관리자 로그인");
   bar.appendChild(btn("닫기", "", closeAdmin));
   if (msg) status(msg, true);
-  const form = el("form"); form.style.marginTop = "20px";
-  const e = {email: "", password: ""};
-  field(form, e, "email", "이메일"); field(form, e, "password", "비밀번호");
-  form.querySelectorAll("input")[1].type = "password";
-  form.querySelectorAll("input")[0].type = "email";
+  const form = el("form", "panel"), e = {email: "", password: ""};
+  form.append(labeled("이메일", input(e, "email", "이메일", {type: "email", plain: true, ac: "username"})),
+              labeled("비밀번호", input(e, "password", "비밀번호", {type: "password", plain: true, ac: "current-password"})));
   const go = el("button", "btn pri", "로그인"); go.type = "submit"; form.appendChild(go);
   form.onsubmit = async ev => {
     ev.preventDefault(); status("로그인 중…");
@@ -359,49 +468,43 @@ function buildLogin(msg) {
   };
   b.appendChild(form);
 }
-
 function buildAdmin() {
-  const {b, bar} = shell("관리자");
-  bar.append(btn("저장", "pri", save), btn("로그아웃", "", async () => { await sb.auth.signOut(); buildLogin(); }), btn("닫기", "", closeAdmin));
-
-  b.appendChild(el("h3", "", "프로필"));
-  field(b, data, "avatar", "프로필 사진", "img");
-  field(b, data, "name", "필명"); field(b, data, "role", "사용 툴 (Use Tool 아래 표시)");
-  field(b, data, "bio", "한 줄 소개", "area"); field(b, data, "contact", "문의 이메일");
-
-  Object.entries(LISTS).forEach(([key, cfg]) => {
-    b.appendChild(el("h3", "", cfg.title));
-    const arr = data[key];
-    arr.forEach((it, idx) => {
-      const box = el("div", "item");
-      cfg.fields.forEach(([k, label, kind]) => field(box, it, k, label, kind));
-      const r = el("div", "row");
-      const move = d => () => { const j = idx + d; if (j < 0 || j >= arr.length) return; [arr[idx], arr[j]] = [arr[j], arr[idx]]; keep(); };
-      r.append(btn("↑", "", move(-1)), btn("↓", "", move(1)), btn("삭제", "del", () => { arr.splice(idx, 1); keep(); }));
-      box.appendChild(r); b.appendChild(box);
-    });
-    b.appendChild(btn("+ 추가", "", () => { arr.push(structuredClone(cfg.blank)); keep(); }));
+  const {b, bar, top} = shell("관리자");
+  const sv = btn(dirty ? "저장 ●" : "저장", "pri", save); sv.id = "adSave";
+  bar.append(sv, btn("닫기", "", closeAdmin));
+  const tabs = el("div", "tabs"); tabs.setAttribute("role", "tablist");
+  TABS.forEach(([k, l]) => {
+    const t = el("button", "", l); t.type = "button"; t.setAttribute("role", "tab"); t.dataset.k = k;
+    t.onclick = () => { tab = k; openKey = null; renderPanel(); $("admin").scrollTop = 0; };
+    tabs.appendChild(t);
   });
-  b.appendChild(el("h3", "", "전체 작업 링크"));
-  field(b, data, "allWorksUrl", "‘전체 작업 보러 가기’ 버튼 주소");
+  top.appendChild(tabs);
+  const panel = el("div", "panel"); panel.id = "adPanel"; b.appendChild(panel);
+  renderPanel();
 }
 
 async function save() {
   status("저장 중…");
   const {error} = await sb.from("site_content").upsert({id: 1, data, updated_at: new Date().toISOString()});
-  if (error) status("저장 실패: " + error.message, true); else { status("저장했어요."); render(); }
+  if (error) { status("저장 실패: " + error.message, true); return; }
+  dirty = false; const s = $("adSave"); if (s) s.textContent = "저장";
+  status("저장했어요."); render();
 }
-
 async function openAdmin() {
   $("admin").hidden = false; document.body.style.overflow = "hidden";
-  if (!sb) { const {b, bar} = shell("관리자"); bar.appendChild(btn("닫기", "", closeAdmin)); status("index.html 위쪽의 SUPABASE_URL과 SUPABASE_ANON_KEY를 먼저 입력해 주세요.", true); return; }
+  if (!sb) { const {bar} = shell("관리자"); bar.appendChild(btn("닫기", "", closeAdmin)); status("index.html 위쪽의 SUPABASE_URL과 SUPABASE_ANON_KEY를 먼저 입력해 주세요.", true); return; }
   const {data: {session}} = await sb.auth.getSession();
   session ? buildAdmin() : buildLogin();
 }
-function closeAdmin() {
+async function closeAdmin() {
+  if (dirty) {
+    if (!confirm("저장하지 않은 변경이 있어요. 저장하지 않고 닫을까요?")) return;
+    dirty = false; await load();   // 저장 안 한 변경은 되돌려요
+  }
   $("admin").hidden = true; document.body.style.overflow = ""; render();
   if (location.hash === "#admin") history.replaceState(null, "", location.pathname + location.search);
 }
+
 $("adminLink").addEventListener("click", e => { e.preventDefault(); openAdmin(); });
 if (location.hash === "#admin") openAdmin();
 
