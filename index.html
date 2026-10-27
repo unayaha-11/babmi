@@ -25,11 +25,11 @@ h1{font-family:"Pencerio","Noto Sans KR",system-ui,sans-serif;font-synthesis:non
 .tool-label{margin-top:6px;font-size:.8rem;font-weight:500;letter-spacing:.08em;color:var(--muted)}
 .role{font-size:1.05rem;font-weight:500;letter-spacing:.02em;margin-top:2px}
 .bio{color:var(--muted);margin-top:14px;max-width:34ch;font-size:.95rem}
-.platforms{display:flex;justify-content:center;flex-wrap:wrap;gap:12px;list-style:none;margin:28px 0 0;padding:0}
-.platforms a{display:grid;place-items:center;width:48px;height:48px;border:0;background:var(--fill);color:#111111;text-decoration:none;font-weight:900;font-size:.95rem;transition:transform .15s}
-.platforms a:hover{transform:scale(1.08)}
-.avatar img,.platforms a img{opacity:0;transition:opacity .35s}
-.avatar img.on,.platforms a img.on{opacity:1}
+.iconrow{display:flex;justify-content:center;flex-wrap:wrap;gap:12px;list-style:none;margin:28px 0 0;padding:0}
+.iconrow a{display:grid;place-items:center;width:48px;height:48px;border:0;background:var(--fill);color:#111111;text-decoration:none;font-weight:900;font-size:.95rem;transition:transform .15s}
+.iconrow a:hover{transform:scale(1.08)}
+.avatar img,.iconrow a img{opacity:0;transition:opacity .35s}
+.avatar img.on,.iconrow a img.on{opacity:1}
 /* 첫 진입 애니메이션: 사진 → 이름(좌→우 필기) → 사용 툴 → 소개 → 플랫폼 */
 @keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
 @keyframes write{
@@ -44,6 +44,15 @@ h1{font-family:"Pencerio","Noto Sans KR",system-ui,sans-serif;font-synthesis:non
 .ready .bio{animation:rise .7s ease-out 2.4s both}
 .ready .platforms{animation:rise .7s ease-out 2.7s both}
 section{margin-top:72px}
+#detail{padding-top:24px}
+.back{font:inherit;font-weight:500;background:none;border:0;padding:8px 0;cursor:pointer;color:var(--muted)}
+.dthumb{margin:16px -24px 0;aspect-ratio:1;background:var(--fill);overflow:hidden}
+.dthumb img{display:block;width:100%;height:100%;object-fit:cover}
+.dtitle{font-size:1.9rem;font-weight:900;line-height:1.3;margin:24px 0 0;word-break:keep-all}
+.dlinks{margin-top:18px;justify-content:flex-start}
+.ddesc{margin-top:28px;white-space:pre-line;line-height:1.85;color:var(--ink)}
+.din{animation:rise .5s ease-out both}
+.item .item{margin:8px 0 12px;background:var(--fill)}
 h2{font-size:1.1rem;font-weight:900;margin-bottom:14px}
 .works{list-style:none;margin:0 -24px;padding:0;display:flex;overflow-x:auto;scroll-snap-type:x mandatory;overscroll-behavior-x:contain;scrollbar-width:none}
 .works::-webkit-scrollbar{display:none}
@@ -89,14 +98,14 @@ footer{margin-top:64px;text-align:center;color:var(--muted);font-size:.9rem}
 <noscript><style>.hero{visibility:visible}</style></noscript>
 </head>
 <body>
-<main>
+<main id="home">
   <header class="hero">
     <div class="circle avatar" id="avatar"></div>
     <h1 id="name"></h1>
     <p class="tool-label">Use Tool</p>
     <p class="role" id="role"></p>
     <p class="bio" id="bio"></p>
-    <ul class="platforms" id="platforms"></ul>
+    <ul class="iconrow platforms" id="platforms"></ul>
   </header>
   <section aria-labelledby="h-works">
     <h2 id="h-works">Launched Works</h2>
@@ -114,6 +123,11 @@ footer{margin-top:64px;text-align:center;color:var(--muted);font-size:.9rem}
   </footer>
 </main>
 
+<main id="detail" hidden>
+  <button class="back" id="back" type="button">← 돌아가기</button>
+  <article id="dBody"></article>
+</main>
+
 <div id="admin" hidden role="dialog" aria-label="관리자"><div class="adm" id="admBody"></div></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js"></script>
@@ -128,7 +142,7 @@ const DEFAULT = {
   bio: "AI 일러스트와 캐릭터 챗봇을 만들어요. 한 줄 소개를 적어 주세요.",
   contact: "you@example.com",
   platforms: [1,2,3,4,5].map(n => ({name:"플랫폼 " + n, url:"#", icon:""})),
-  works: [1,2,3].map(n => ({title:"작품 " + n, url:"#", img:""})),
+  works: [1,2,3].map(n => ({title:"작품 " + n, img:"", desc:"", links:[]})),
   gallery: [1,2,3,4].map(n => ({title:"이미지 시리즈 " + n, url:"#", img:""})),
   allWorksUrl: "#"
 };
@@ -141,9 +155,20 @@ const el = (t, c, x) => { const e = document.createElement(t); if (c) e.classNam
 const safeUrl = u => /^(https?:\/\/|\/|#)/.test(u || "") ? u : "#";
 const link = (a, u) => { u = safeUrl(u); a.href = u; if (u !== "#") { a.target = "_blank"; a.rel = "noopener"; } return a; };
 const fav = u => { try { const h = new URL(u); return /^https?:$/.test(h.protocol) ? "https://www.google.com/s2/favicons?sz=128&domain_url=" + encodeURIComponent(h.origin) : ""; } catch (e) { return ""; } };
+let view = "home", homeScroll = 0, cameFromHome = false;
+const normalize = d => { d.works = (d.works || []).map(w => ({title: w.title || "", img: w.img || "", desc: w.desc || "",
+  links: Array.isArray(w.links) ? w.links : (w.url && w.url !== "#" ? [{name: "", url: w.url, icon: ""}] : [])})); return d; };
 const pic = (src, alt, eager) => { const i = el("img"); i.src = /^(https?:\/\/|\/)/.test(src) ? src : ""; i.alt = alt || ""; i.loading = eager ? "eager" : "lazy"; return i; };
 const reveal = im => { const on = () => im.classList.add("on"); if (im.complete && im.naturalWidth) on(); else im.addEventListener("load", on, {once: true}); };
 let rendered = false;
+function iconItem(p) {
+  const li = el("li"), a = link(el("a", "circle"), p.url);
+  a.setAttribute("aria-label", p.name || "링크"); a.title = p.name || "";
+  const letter = () => { a.replaceChildren(); a.textContent = (p.name || "?").charAt(0); };
+  const src = p.icon || fav(p.url);   // 직접 올린 아이콘이 있으면 우선, 없으면 링크 사이트의 파비콘
+  if (src) { const im = pic(src, "", true); im.onerror = letter; a.appendChild(im); reveal(im); } else letter();
+  li.appendChild(a); return li;
+}
 
 /* ---------- 공개 화면 ---------- */
 function render() {
@@ -154,18 +179,11 @@ function render() {
   if (data.avatar) { const im = pic(data.avatar, data.name + " 프로필 사진", true); im.onerror = () => { av.replaceChildren(); av.textContent = initial; }; av.appendChild(im); reveal(im); } else av.textContent = initial;
 
   $("platforms").replaceChildren();
-  data.platforms.forEach(p => {
-    const li = el("li"), a = link(el("a", "circle"), p.url);
-    a.setAttribute("aria-label", p.name); a.title = p.name;
-    const letter = () => { a.replaceChildren(); a.textContent = (p.name || "?").charAt(0); };
-    const src = p.icon || fav(p.url);   // 직접 올린 아이콘이 있으면 우선, 없으면 링크 사이트의 파비콘
-    if (src) { const im = pic(src, "", true); im.onerror = letter; a.appendChild(im); reveal(im); } else letter();
-    li.appendChild(a); $("platforms").appendChild(li);
-  });
+  data.platforms.forEach(p => $("platforms").appendChild(iconItem(p)));
 
   $("works").replaceChildren(); $("dots").replaceChildren();
   data.works.forEach((w, i) => {
-    const li = el("li"), a = link(el("a", "banner"), w.url);
+    const li = el("li"), a = el("a", "banner"); a.href = "#work-" + i; a.addEventListener("click", () => { cameFromHome = true; });
     a.setAttribute("aria-label", w.title); if (w.img) a.appendChild(pic(w.img, w.title));
     li.appendChild(a); $("works").appendChild(li);
     const b = el("button"); b.type = "button"; b.setAttribute("aria-label", (i + 1) + "번째 작품");
@@ -182,7 +200,53 @@ function render() {
   });
   link($("more"), data.allWorksUrl);
   $("contact").textContent = "문의 " + data.contact;
+  route();
 }
+function buildDetail(w) {
+  const d = $("dBody"); d.replaceChildren(); d.className = "din";
+  const t = el("div", "dthumb"); if (w.img) t.appendChild(pic(w.img, w.title, true)); d.appendChild(t);
+  d.appendChild(el("h2", "dtitle", w.title));
+  const links = (w.links || []).filter(p => p.url && p.url !== "#");
+  if (links.length) { const ul = el("ul", "iconrow dlinks"); links.forEach(p => ul.appendChild(iconItem(p))); d.appendChild(ul); }
+  if (w.desc) d.appendChild(el("p", "ddesc", w.desc));
+}
+function route() {
+  const m = /^#work-(\d+)$/.exec(location.hash), w = m && data.works[+m[1]];
+  if (w) {
+    if (view !== "detail") homeScroll = window.scrollY;
+    $("home").hidden = true; $("detail").hidden = false; buildDetail(w);
+    if (view !== "detail") window.scrollTo(0, 0);
+    view = "detail"; document.title = (w.title || "작품") + " · " + data.name;
+  } else {
+    if (m) history.replaceState(null, "", location.pathname + location.search);
+    $("detail").hidden = true; $("home").hidden = false;
+    if (view === "detail") window.scrollTo(0, homeScroll);
+    view = "home"; document.title = data.name + " · Portfolio";
+  }
+}
+window.addEventListener("hashchange", route);
+$("back").addEventListener("click", () => {
+  if (cameFromHome) { cameFromHome = false; history.back(); }
+  else { history.replaceState(null, "", location.pathname + location.search); route(); }
+});
+
+/* 런칭 작품 자동 슬라이드 (2.5초) — 손댄 뒤 4초, 마우스를 올려 둔 동안, 화면 밖/다른 탭일 때는 멈춤 */
+(function autoSlide() {
+  const ws = $("works"); let last = 0, hover = false, inView = true;
+  const bump = () => { last = Date.now(); };
+  ["pointerdown", "touchstart", "wheel", "keydown", "focusin"].forEach(ev => ws.addEventListener(ev, bump, {passive: true}));
+  $("dots").addEventListener("pointerdown", bump, {passive: true});
+  ws.addEventListener("mouseenter", () => { hover = true; });
+  ws.addEventListener("mouseleave", () => { hover = false; bump(); });
+  new IntersectionObserver(es => { inView = es[0].isIntersecting; }, {threshold: .5}).observe(ws);
+  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
+  setInterval(() => {
+    const n = ws.children.length;
+    if (reduce.matches || n < 2 || document.hidden || !inView || hover || Date.now() - last < 4000 || !$("admin").hidden) return;
+    const i = Math.round(ws.scrollLeft / (ws.clientWidth || 1));
+    ws.scrollTo({left: ((i + 1) % n) * ws.clientWidth, behavior: "smooth"});
+  }, 2500);
+})();
 function syncDots() {
   const ws = $("works"), i = Math.round(ws.scrollLeft / (ws.clientWidth || 1));
   [...$("dots").children].forEach((b, k) => b.setAttribute("aria-current", String(k === i)));
@@ -193,7 +257,7 @@ async function load() {
   if (!sb) return;
   try {
     const {data: row} = await sb.from("site_content").select("data").eq("id", 1).maybeSingle();
-    if (row && row.data && Object.keys(row.data).length) data = {...DEFAULT, ...row.data};
+    if (row && row.data && Object.keys(row.data).length) data = normalize({...DEFAULT, ...row.data});
   } catch (e) { console.error(e); }
   render();
 }
@@ -203,8 +267,8 @@ const status = (msg, err) => { const s = $("adStatus"); if (s) { s.textContent =
 const LISTS = {
   platforms: {title: "활동 플랫폼", blank: {name: "", url: "", icon: ""},
     fields: [["name", "플랫폼 이름"], ["url", "내 프로필 링크"], ["icon", "아이콘 이미지 (선택 · 비워 두면 링크 사이트의 파비콘이 자동으로 표시돼요)", "img"]]},
-  works: {title: "런칭 작품 (정사각형 배너)", blank: {title: "", url: "", img: ""},
-    fields: [["title", "작품명 (화면에는 안 보이고 접근성용)"], ["url", "상세 페이지 주소"], ["img", "배너 이미지", "img"]]},
+  works: {title: "런칭 작품 (정사각형 썸네일 → 누르면 상세페이지)", blank: {title: "", img: "", desc: "", links: []},
+    fields: [["title", "작품 제목 (상세페이지에 큰 글자로 표시)"], ["img", "썸네일 이미지", "img"], ["links", "작품 링크 (여러 개 가능)", "links"], ["desc", "상세 설명", "area"]]},
   gallery: {title: "개인 제작 포트폴리오", blank: {title: "", url: "", img: ""},
     fields: [["title", "제목"], ["url", "링크 주소"], ["img", "썸네일 이미지", "img"]]}
 };
@@ -219,12 +283,31 @@ async function upload(file) {
 
 function field(parent, obj, key, label, kind) {
   if (kind === "img") { imgField(parent, obj, key, label); return; }
+  if (kind === "links") { linksField(parent, obj, key, label); return; }
   const w = el("label", "f"); w.appendChild(el("span", "", label));
   const i = el(kind === "area" ? "textarea" : "input"); i.value = obj[key] || "";
   i.oninput = () => { obj[key] = i.value; };
   w.appendChild(i);
   parent.appendChild(w);
 }
+
+/* 작품 링크: 프로필 플랫폼과 같은 방식 (링크 주소 → 파비콘 자동, 필요하면 아이콘 직접 업로드) */
+function linksField(parent, obj, key, label) {
+  const w = el("div", "f"); w.appendChild(el("span", "", label));
+  const arr = obj[key] = obj[key] || [];
+  arr.forEach((it, idx) => {
+    const box = el("div", "item");
+    field(box, it, "name", "링크 이름 (예: 제타, 크랙)"); field(box, it, "url", "작품 링크 주소");
+    field(box, it, "icon", "아이콘 이미지 (선택 · 비워 두면 링크 사이트의 파비콘이 자동으로 표시돼요)", "img");
+    const r = el("div", "row");
+    const move = d => () => { const j = idx + d; if (j < 0 || j >= arr.length) return; [arr[idx], arr[j]] = [arr[j], arr[idx]]; keep(); };
+    r.append(btn("↑", "", move(-1)), btn("↓", "", move(1)), btn("삭제", "del", () => { arr.splice(idx, 1); keep(); }));
+    box.appendChild(r); w.appendChild(box);
+  });
+  w.appendChild(btn("+ 링크 추가", "", () => { arr.push({name: "", url: "", icon: ""}); keep(); }));
+  parent.appendChild(w);
+}
+const keep = () => { const a = $("admin"), y = a.scrollTop; buildAdmin(); a.scrollTop = y; };
 
 /* 이미지는 외부 링크 입력 없이 파일 업로드만 가능 */
 function imgField(parent, obj, key, label) {
@@ -292,11 +375,11 @@ function buildAdmin() {
       const box = el("div", "item");
       cfg.fields.forEach(([k, label, kind]) => field(box, it, k, label, kind));
       const r = el("div", "row");
-      const move = d => () => { const j = idx + d; if (j < 0 || j >= arr.length) return; [arr[idx], arr[j]] = [arr[j], arr[idx]]; buildAdmin(); };
-      r.append(btn("↑", "", move(-1)), btn("↓", "", move(1)), btn("삭제", "del", () => { arr.splice(idx, 1); buildAdmin(); }));
+      const move = d => () => { const j = idx + d; if (j < 0 || j >= arr.length) return; [arr[idx], arr[j]] = [arr[j], arr[idx]]; keep(); };
+      r.append(btn("↑", "", move(-1)), btn("↓", "", move(1)), btn("삭제", "del", () => { arr.splice(idx, 1); keep(); }));
       box.appendChild(r); b.appendChild(box);
     });
-    b.appendChild(btn("+ 추가", "", () => { arr.push({...cfg.blank}); buildAdmin(); }));
+    b.appendChild(btn("+ 추가", "", () => { arr.push(structuredClone(cfg.blank)); keep(); }));
   });
   b.appendChild(el("h3", "", "전체 작업 링크"));
   field(b, data, "allWorksUrl", "‘전체 작업 보러 가기’ 버튼 주소");
