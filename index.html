@@ -78,6 +78,13 @@ a.tile:hover{transform:translateY(-3px)}
 .cap{margin:8px 2px 0;font-size:.82rem;line-height:1.5;color:var(--muted);word-break:keep-all}
 footer{margin-top:64px;text-align:center;color:var(--muted);font-size:.9rem}
 .adminlink{display:inline-block;margin-top:10px;font-size:.8rem;color:var(--muted)}
+/* 로딩 화면 */
+#loader{position:fixed;inset:0;z-index:40;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;transition:opacity .35s ease,visibility 0s .35s}
+#loader .lt{font-size:.9rem;font-weight:500;letter-spacing:.04em;color:var(--muted)}
+#loader .lb{width:min(56vw,220px);height:4px;border-radius:2px;background:var(--line);overflow:hidden}
+#loader .lf{display:block;height:100%;width:40%;border-radius:2px;background:#111;animation:creep 4s cubic-bezier(.1,.6,.3,1) forwards}
+@keyframes creep{from{width:6%}to{width:82%}}
+.ready #loader{opacity:0;visibility:hidden;pointer-events:none}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important;animation:none!important}}
 
 /* admin */
@@ -128,9 +135,11 @@ footer{margin-top:64px;text-align:center;color:var(--muted);font-size:.9rem}
 #adToast[hidden]{display:none}
 #adToast.err{background:#C0262D}
 </style>
-<noscript><style>.hero{visibility:visible}</style></noscript>
+<noscript><style>.hero{visibility:visible}#loader{display:none}</style></noscript>
 </head>
 <body>
+<div id="loader" role="status" aria-live="polite"><div class="lb"><span class="lf" id="loadFill"></span></div><div class="lt">불러오는 중…</div></div>
+<script>setTimeout(function(){document.documentElement.classList.add("ready")},9000);/* 안전장치: 연결이 실패해도 로딩 화면이 영원히 남지 않게 */</script>
 <main id="home">
   <header class="hero">
     <div class="circle avatar" id="avatar"></div>
@@ -146,14 +155,13 @@ footer{margin-top:64px;text-align:center;color:var(--muted);font-size:.9rem}
     <div class="dots" id="dots"></div>
   </section>
   <section aria-labelledby="h-gal">
-    <h2 id="h-gal">Personal Portfolio</h2>
+    <h2 id="h-gal">Personal Projects</h2>
     <p class="secdesc" id="galleryDesc" hidden></p>
     <ul class="gslide" id="gallery"></ul>
     <div class="dots" id="galDots"></div>
   </section>
   <footer>
     <div id="contact"></div>
-    <a class="adminlink" href="#admin" id="adminLink">관리자</a>
   </footer>
 </main>
 
@@ -513,8 +521,8 @@ const PANELS = {
   },
   works: p => p.appendChild(cardList("works")),
   gallery: p => {
-    const d = input(data, "galleryDesc", "예: 이런저런 용도로 만든 개인 작업들이에요.", {area: true, rows: 3}); d.maxLength = 300;
-    p.appendChild(labeled("섹션 설명 (Personal Portfolio 제목 아래 작은 회색 글씨 · 선택)", d));
+    const d = input(data, "galleryDesc", "예: 캐릭터 AI 이미지를 활용해 직접 기획·제작한 개인 프로젝트예요.", {area: true, rows: 3}); d.maxLength = 300;
+    p.appendChild(labeled("섹션 설명 (Personal Projects 제목 아래 작은 회색 글씨 · 선택)", d));
     p.appendChild(labeled("항목 (눌러서 펼치기)", cardList("gallery")));
   },
   misc: p => {
@@ -591,7 +599,7 @@ async function closeAdmin() {
   if (location.hash === "#admin") history.replaceState(null, "", location.pathname + location.search);
 }
 
-$("adminLink").addEventListener("click", e => { e.preventDefault(); openAdmin(); });
+window.addEventListener("hashchange", () => { if (location.hash === "#admin" && $("admin").hidden) openAdmin(); });
 if (location.hash === "#admin") openAdmin();
 
 /* 데이터와 프로필 사진이 준비된 뒤에 한 번에 보여주고 애니메이션 시작 */
@@ -601,10 +609,17 @@ const avatarReady = () => new Promise(res => {
   im.addEventListener("load", res, {once: true}); im.addEventListener("error", res, {once: true});
   setTimeout(res, 2500);
 });
+const finishLoader = () => new Promise(res => {
+  const f = $("loadFill"); if (!f) return res();
+  f.style.animation = "none"; f.style.width = f.getBoundingClientRect().width + "px";   // 현재 위치에서 멈춘 뒤
+  void f.offsetWidth; f.style.transition = "width .25s ease-out"; f.style.width = "100%"; // 끝까지 채우기
+  setTimeout(res, 280);
+});
 (async function boot() {
   if (sb) await Promise.race([load(), new Promise(r => setTimeout(r, 3500))]);
   if (!rendered) render();
   await avatarReady();
+  await finishLoader();
   document.documentElement.classList.add("ready");
 })();
 </script>
