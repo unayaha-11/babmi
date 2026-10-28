@@ -57,7 +57,7 @@ section{margin-top:72px}
 h2{font-size:1.1rem;font-weight:900;margin-bottom:14px}
 .works{list-style:none;margin:0 -24px;padding:0;display:flex;overflow-x:auto;scroll-snap-type:x mandatory;overscroll-behavior-x:contain;scrollbar-width:none}
 .works::-webkit-scrollbar{display:none}
-.works li{flex:0 0 100%;scroll-snap-align:start}
+.works li{flex:0 0 100%;scroll-snap-align:start;scroll-snap-stop:always}
 .banner{display:block;aspect-ratio:1;position:relative;overflow:hidden;background:var(--fill);text-decoration:none}
 .banner img{display:block;width:100%;height:100%;object-fit:cover}
 .dots{display:flex;justify-content:center;gap:8px;margin-top:14px}
@@ -68,6 +68,8 @@ h2{font-size:1.1rem;font-weight:900;margin-bottom:14px}
 .tile:hover{transform:translateY(-3px)}
 .tile img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .tile.hasimg span{position:relative;color:#fff;text-shadow:0 1px 8px rgba(0,0,0,.55)}
+.secdesc{margin:-8px 0 16px;font-size:.85rem;line-height:1.6;color:var(--muted);white-space:pre-line;word-break:keep-all}
+.cap{margin:8px 2px 0;font-size:.82rem;line-height:1.5;color:var(--muted);word-break:keep-all}
 .more{display:block;margin-top:18px;text-align:center;font-weight:500;padding:12px;border:3px solid #111111;border-radius:999px;text-decoration:none;transition:background .15s,color .15s}
 .more:hover{background:#111111;color:#FFFFFF}
 footer{margin-top:64px;text-align:center;color:var(--muted);font-size:.9rem}
@@ -142,6 +144,7 @@ footer{margin-top:64px;text-align:center;color:var(--muted);font-size:.9rem}
   </section>
   <section aria-labelledby="h-gal">
     <h2 id="h-gal">Personal Portfolio</h2>
+    <p class="secdesc" id="galleryDesc" hidden></p>
     <ul class="gallery" id="gallery"></ul>
     <a class="more" id="more">전체 작업 보러 가기</a>
   </section>
@@ -171,7 +174,8 @@ const DEFAULT = {
   contact: "you@example.com",
   platforms: [1,2,3,4,5].map(n => ({name:"플랫폼 " + n, url:"#", icon:""})),
   works: [1,2,3].map(n => ({title:"작품 " + n, img:"", desc:"", links:[]})),
-  gallery: [1,2,3,4].map(n => ({title:"이미지 시리즈 " + n, url:"#", img:""})),
+  galleryDesc: "",
+  gallery: [1,2,3,4].map(n => ({title:"이미지 시리즈 " + n, url:"#", img:"", desc:""})),
   allWorksUrl: "#"
 };
 let data = structuredClone(DEFAULT);
@@ -211,20 +215,29 @@ function render() {
 
   $("works").replaceChildren(); $("dots").replaceChildren();
   data.works.forEach((w, i) => {
-    const li = el("li"), a = el("a", "banner"); a.href = "#work-" + i; a.addEventListener("click", () => { cameFromHome = true; });
+    const li = el("li"), a = el("a", "banner"); a.href = "#work-" + i;
     a.setAttribute("aria-label", w.title); if (w.img) a.appendChild(pic(w.img, w.title));
     li.appendChild(a); $("works").appendChild(li);
     const b = el("button"); b.type = "button"; b.setAttribute("aria-label", (i + 1) + "번째 작품");
-    b.onclick = () => $("works").scrollTo({left: i * $("works").clientWidth, behavior: "smooth"});
+    b.onclick = () => $("works").scrollTo({left: (i + (data.works.length > 1 ? 1 : 0)) * $("works").clientWidth, behavior: "smooth"});
     $("dots").appendChild(b);
   });
+  // 무한 루프: 맨 앞에 마지막 슬라이드, 맨 뒤에 첫 슬라이드의 복제본을 붙여요
+  if (data.works.length > 1) {
+    const ws = $("works"), mk = li => { const c = li.cloneNode(true); c.setAttribute("aria-hidden", "true"); c.querySelector("a").tabIndex = -1; return c; };
+    ws.prepend(mk(ws.lastElementChild)); ws.append(mk(ws.children[1]));
+  }
+  placeLoop(Math.min(curReal, Math.max(data.works.length - 1, 0)));
   syncDots();
 
+  $("galleryDesc").textContent = data.galleryDesc || ""; $("galleryDesc").hidden = !data.galleryDesc;
   $("gallery").replaceChildren();
   data.gallery.forEach(g => {
     const li = el("li"), a = link(el("a", "tile" + (g.img ? " hasimg" : "")), g.url);
     if (g.img) a.appendChild(pic(g.img, g.title));
-    a.appendChild(el("span", "", g.title)); li.appendChild(a); $("gallery").appendChild(li);
+    a.appendChild(el("span", "", g.title)); li.appendChild(a);
+    if (g.desc) li.appendChild(el("p", "cap", g.desc));
+    $("gallery").appendChild(li);
   });
   link($("more"), data.allWorksUrl);
   $("contact").textContent = "문의 " + data.contact;
@@ -248,7 +261,7 @@ function route() {
   } else {
     if (m) history.replaceState(null, "", location.pathname + location.search);
     $("detail").hidden = true; $("home").hidden = false;
-    if (view === "detail") window.scrollTo(0, homeScroll);
+    if (view === "detail") { placeLoop(curReal); window.scrollTo(0, homeScroll); }
     view = "home"; document.title = data.name + " · Portfolio";
   }
 }
@@ -259,8 +272,35 @@ $("back").addEventListener("click", () => {
 });
 
 /* 런칭 작품 자동 슬라이드 (2.5초) — 손댄 뒤 4초, 마우스를 올려 둔 동안, 화면 밖/다른 탭일 때는 멈춤 */
-(function autoSlide() {
-  const ws = $("works"); let last = 0, hover = false, inView = true;
+/* 런칭 작품 무한 루프 슬라이드: 마지막에서 더 넘기면 1번으로, 1번에서 뒤로 넘기면 마지막으로 이어져요 */
+let curReal = 0, touching = false, settleT;
+const loopW = () => { const ws = $("works"); return {ws, n: data.works.length, w: ws.clientWidth}; };
+function placeLoop(i) {
+  const {ws, n, w} = loopW(); if (!w) return;
+  ws.scrollTo({left: (i + (n > 1 ? 1 : 0)) * w, behavior: "instant"});
+}
+function syncDots() {
+  const {ws, n, w} = loopW(); if (!w || !n) return;
+  const v = Math.round(ws.scrollLeft / w);
+  curReal = n > 1 ? ((v - 1) % n + n) % n : 0;
+  [...$("dots").children].forEach((b, k) => b.setAttribute("aria-current", String(k === curReal)));
+}
+function settleLoop() {            // 복제본 위에 멈췄으면 같은 모양의 진짜 슬라이드로 순간 이동
+  const {ws, n, w} = loopW(); if (n < 2 || !w || touching) return;
+  const pos = ws.scrollLeft / w;
+  if (pos < 0.02) ws.scrollTo({left: n * w, behavior: "instant"});
+  else if (pos > n + 0.98) ws.scrollTo({left: w, behavior: "instant"});
+}
+(function slider() {
+  const ws = $("works");
+  ws.addEventListener("scroll", () => { syncDots(); clearTimeout(settleT); settleT = setTimeout(settleLoop, 80); }, {passive: true});
+  ws.addEventListener("touchstart", () => { touching = true; }, {passive: true});
+  ["touchend", "touchcancel"].forEach(ev => ws.addEventListener(ev, () => { touching = false; clearTimeout(settleT); settleT = setTimeout(settleLoop, 120); }, {passive: true}));
+  ws.addEventListener("click", e => { if (e.target.closest("a.banner")) cameFromHome = true; });
+  window.addEventListener("resize", () => placeLoop(curReal));
+
+  /* 2.5초 자동 슬라이드 — 손댄 뒤 4초, 마우스를 올려 둔 동안, 화면 밖/다른 탭일 때는 멈춤 */
+  let last = 0, hover = false, inView = true;
   const bump = () => { last = Date.now(); };
   ["pointerdown", "touchstart", "wheel", "keydown", "focusin"].forEach(ev => ws.addEventListener(ev, bump, {passive: true}));
   $("dots").addEventListener("pointerdown", bump, {passive: true});
@@ -269,17 +309,13 @@ $("back").addEventListener("click", () => {
   new IntersectionObserver(es => { inView = es[0].isIntersecting; }, {threshold: .5}).observe(ws);
   const reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
   setInterval(() => {
-    const n = ws.children.length;
-    if (reduce.matches || n < 2 || document.hidden || !inView || hover || Date.now() - last < 4000 || !$("admin").hidden) return;
-    const i = Math.round(ws.scrollLeft / (ws.clientWidth || 1));
-    ws.scrollTo({left: ((i + 1) % n) * ws.clientWidth, behavior: "smooth"});
+    const {n, w} = loopW();
+    if (reduce.matches || n < 2 || !w || document.hidden || !inView || hover || touching || Date.now() - last < 4000 || !$("admin").hidden) return;
+    const v = Math.round(ws.scrollLeft / w);
+    if (v >= n + 1) return;        // 복제본 위라면 곧 제자리로 돌아오니 다음 턴에
+    ws.scrollTo({left: (v + 1) * w, behavior: "smooth"});
   }, 2500);
 })();
-function syncDots() {
-  const ws = $("works"), i = Math.round(ws.scrollLeft / (ws.clientWidth || 1));
-  [...$("dots").children].forEach((b, k) => b.setAttribute("aria-current", String(k === i)));
-}
-$("works").addEventListener("scroll", syncDots, {passive: true});
 
 async function load() {
   if (!sb) return;
@@ -381,11 +417,13 @@ const CARDS = {
       b.appendChild(lw);
       b.appendChild(labeled("상세 설명", input(it, "desc", "작품 설명", {area: true, rows: 5})));
     }},
-  gallery: {blank: {title: "", url: "", img: ""},
+  gallery: {blank: {title: "", url: "", img: "", desc: ""},
     build: (b, it, nm) => {
       b.appendChild(labeled("제목", input(it, "title", "제목", {on: v => { nm.textContent = v || "(제목 없음)"; }})));
       b.appendChild(labeled("링크 주소", input(it, "url", "https://링크 주소", {type: "url"})));
       b.appendChild(labeled("썸네일", picker(it, "img")));
+      const d = input(it, "desc", "썸네일 아래에 표시될 짧은 설명", {area: true, rows: 2}); d.maxLength = 100;
+      b.appendChild(labeled("짧은 설명 (선택 · 100자까지)", d));
     }}
 };
 function cardList(key) {
@@ -429,7 +467,11 @@ const PANELS = {
     p.appendChild(linkList(data.platforms));
   },
   works: p => p.appendChild(cardList("works")),
-  gallery: p => p.appendChild(cardList("gallery")),
+  gallery: p => {
+    const d = input(data, "galleryDesc", "예: 이런저런 용도로 만든 개인 작업들이에요.", {area: true, rows: 3}); d.maxLength = 300;
+    p.appendChild(labeled("섹션 설명 (Personal Portfolio 제목 아래 작은 회색 글씨 · 선택)", d));
+    p.appendChild(labeled("항목 (눌러서 펼치기)", cardList("gallery")));
+  },
   misc: p => {
     p.appendChild(labeled("‘전체 작업 보러 가기’ 버튼 주소", input(data, "allWorksUrl", "https://링크 주소", {type: "url"})));
     const r = el("div", "row");
