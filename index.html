@@ -225,7 +225,8 @@ function render() {
 
   $("galleryDesc").textContent = data.galleryDesc || ""; $("galleryDesc").hidden = !data.galleryDesc;
   fillLoop(loops.gallery, data.gallery, (g, i) => {
-    const li = el("li"), a = el("a", "tile" + (g.img ? " hasimg" : "")); a.href = "#port-" + i;
+    const li = el("li"), a = el("a", "tile" + (g.img ? " hasimg" : "")), L = (g.links || []).find(p => p.url && p.url !== "#" && safeUrl(p.url) !== "#");
+    if (L) link(a, L.url); else a.href = "#port-" + i;
     if (g.img) a.appendChild(pic(g.img, g.title));
     a.appendChild(el("span", "", g.title)); li.appendChild(a);
     if (g.desc) li.appendChild(el("p", "cap", g.desc));
@@ -309,7 +310,7 @@ const loops = {
 (function slider() {
   const ws = $("works"), W = loops.works;
   ws.addEventListener("click", e => { if (e.target.closest("a.banner")) cameFromHome = true; });
-  $("gallery").addEventListener("click", e => { if (e.target.closest("a.tile")) cameFromHome = true; });
+  $("gallery").addEventListener("click", e => { if (e.target.closest("a.tile[href^=\"#\"]")) cameFromHome = true; });
   window.addEventListener("resize", () => Object.values(loops).forEach(L => L.place(L.cur)));
 
   /* 런칭 작품만 2.5초 자동 슬라이드 — 손댄 뒤 4초, 마우스를 올려 둔 동안, 화면 밖/다른 탭일 때는 멈춤 */
