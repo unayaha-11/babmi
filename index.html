@@ -53,6 +53,8 @@ section{margin-top:72px}
 .dlinks{margin-top:16px;gap:18px;justify-content:flex-start}
 .dlinks a{width:38px;height:38px;font-size:.85rem}
 .ddesc{margin-top:28px;white-space:pre-line;line-height:1.85;color:var(--ink)}
+.ddesc a.inl{text-decoration:underline;text-underline-offset:3px;font-weight:500;word-break:break-all}
+.ddate{margin-top:12px;font-size:.88rem;color:var(--muted)}
 .din{animation:rise .5s ease-out both}
 .item .item{margin:8px 0 12px;background:var(--fill)}
 h2{font-size:1.1rem;font-weight:900;margin-bottom:14px}
@@ -190,7 +192,7 @@ const fav = u => { try { const h = new URL(u); return /^https?:$/.test(h.protoco
 let view = "home", homeScroll = 0, cameFromHome = false;
 const toLinks = x => Array.isArray(x.links) ? x.links : (x.url && x.url !== "#" ? [{name: "", url: x.url, icon: ""}] : []);
 const normalize = d => {
-  d.works = (d.works || []).map(w => ({title: w.title || "", img: w.img || "", desc: w.desc || "", links: toLinks(w)}));
+  d.works = (d.works || []).map(w => ({title: w.title || "", img: w.img || "", desc: w.desc || "", date: w.date || "", links: toLinks(w)}));
   d.gallery = (d.gallery || []).map(g => ({title: g.title || "", img: g.img || "", desc: g.desc || "", detail: g.detail || "", links: toLinks(g)}));
   return d;
 };
@@ -241,7 +243,26 @@ function buildDetail(w, text, wide) {
   d.appendChild(el("h2", "dtitle", w.title));
   const links = (w.links || []).filter(p => p.url && p.url !== "#");
   if (links.length) { const ul = el("ul", "iconrow dlinks"); links.forEach(p => ul.appendChild(iconItem(p))); d.appendChild(ul); }
-  if (text) d.appendChild(el("p", "ddesc", text));
+  if (w.date) d.appendChild(el("p", "ddate", "출시일 · " + fmtDate(w.date)));
+  if (text) d.appendChild(richText(text));
+}
+/* 출시일: 2026-10-28 → 2026년 10월 28일 */
+function fmtDate(v) {
+  const m = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(v || "");
+  return m ? m[1] + "년 " + +m[2] + "월 " + +m[3] + "일" : v;
+}
+/* 설명 안의 [문구](주소) → 눌러서 이동하는 하이퍼링크 */
+function richText(text) {
+  const p = el("p", "ddesc"), re = /\[([^\]\n]+)\]\(\s*([^)\s]+)\s*\)/g;
+  let last = 0, m;
+  while ((m = re.exec(text))) {
+    if (safeUrl(m[2]) === "#") continue;
+    if (m.index > last) p.appendChild(document.createTextNode(text.slice(last, m.index)));
+    const a = el("a", "inl", m[1]); link(a, m[2]); p.appendChild(a);
+    last = re.lastIndex;
+  }
+  if (last < text.length) p.appendChild(document.createTextNode(text.slice(last)));
+  return p;
 }
 function route() {
   const m = /^#(work|port)-(\d+)$/.exec(location.hash), kind = m && m[1], w = m && (kind === "work" ? data.works : data.gallery)[+m[2]];
@@ -422,14 +443,19 @@ function linkList(arr) {
 
 /* 접이식 카드 목록 (작품 / 포트폴리오): 한 번에 하나만 펼쳐서 편집 */
 const CARDS = {
-  works: {blank: {title: "", img: "", desc: "", links: []},
+  works: {blank: {title: "", img: "", desc: "", date: "", links: []},
     build: (b, it, nm) => {
       b.appendChild(labeled("제목 (상세페이지에 큰 글자로 표시)", input(it, "title", "작품 제목", {on: v => { nm.textContent = v || "(제목 없음)"; }})));
       b.appendChild(labeled("썸네일 (정사각형)", picker(it, "img")));
       const lw = labeled("작품 링크 (여러 개 가능)", linkList(it.links = it.links || []));
       lw.insertBefore(el("p", "hint", "주소만 넣으면 파비콘이 자동으로 나와요. 동그란 아이콘을 누르면 직접 올릴 수 있어요."), lw.children[1]);
       b.appendChild(lw);
-      b.appendChild(labeled("상세 설명", input(it, "desc", "작품 설명", {area: true, rows: 5})));
+      const dt = labeled("출시일 (선택 · 아이콘 바로 아래에 '출시일 · 0000년 0월 0일'로 표시)", input(it, "date", "", {type: "date"}));
+      dt.appendChild(btn("출시일 지우기", "sm", () => { it.date = ""; dirt(); keep(); }));
+      b.appendChild(dt);
+      const ds = labeled("상세 설명", input(it, "desc", "작품 설명", {area: true, rows: 5}));
+      ds.insertBefore(el("p", "hint", "링크로 만들 문구는 [문구](https://주소) 형태로 쓰세요. 예: [여기서 보기](https://example.com)"), ds.children[1]);
+      b.appendChild(ds);
     }},
   gallery: {blank: {title: "", img: "", desc: "", detail: "", links: []},
     build: (b, it, nm) => {
@@ -440,7 +466,9 @@ const CARDS = {
       const lw = labeled("링크 (여러 개 가능)", linkList(it.links = it.links || []));
       lw.insertBefore(el("p", "hint", "주소만 넣으면 파비콘이 자동으로 나와요. 동그란 아이콘을 누르면 직접 올릴 수 있어요."), lw.children[1]);
       b.appendChild(lw);
-      b.appendChild(labeled("상세 설명 (상세페이지에 표시)", input(it, "detail", "자세한 설명", {area: true, rows: 5})));
+      const ds = labeled("상세 설명 (상세페이지에 표시)", input(it, "detail", "자세한 설명", {area: true, rows: 5}));
+      ds.insertBefore(el("p", "hint", "링크로 만들 문구는 [문구](https://주소) 형태로 쓰세요."), ds.children[1]);
+      b.appendChild(ds);
     }}
 };
 function cardList(key) {
