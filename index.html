@@ -47,6 +47,7 @@ section{margin-top:72px}
 #detail{padding-top:24px}
 .back{font:inherit;font-weight:500;background:none;border:0;padding:8px 0;cursor:pointer;color:var(--muted)}
 .dthumb{margin:16px -24px 0;aspect-ratio:1;background:var(--fill);overflow:hidden}
+.dthumb.wide{aspect-ratio:16/9}
 .dthumb img{display:block;width:100%;height:100%;object-fit:cover}
 .dtitle{font-size:clamp(1.15rem,5.4vw,1.5rem);font-weight:500;line-height:1.4;margin:24px 0 0;word-break:keep-all}
 .dlinks{margin-top:16px;gap:18px;justify-content:flex-start}
@@ -174,7 +175,7 @@ const DEFAULT = {
   platforms: [1,2,3,4,5].map(n => ({name:"플랫폼 " + n, url:"#", icon:""})),
   works: [1,2,3].map(n => ({title:"작품 " + n, img:"", desc:"", links:[]})),
   galleryDesc: "",
-  gallery: [1,2,3,4].map(n => ({title:"이미지 시리즈 " + n, url:"#", img:"", desc:""}))
+  gallery: [1,2,3,4].map(n => ({title:"이미지 시리즈 " + n, img:"", desc:"", detail:"", links:[]}))
 };
 let data = structuredClone(DEFAULT);
 const configured = !SUPABASE_URL.startsWith("YOUR_");
@@ -186,8 +187,12 @@ const safeUrl = u => /^(https?:\/\/|\/|#)/.test(u || "") ? u : "#";
 const link = (a, u) => { u = safeUrl(u); a.href = u; if (u !== "#") { a.target = "_blank"; a.rel = "noopener"; } return a; };
 const fav = u => { try { const h = new URL(u); return /^https?:$/.test(h.protocol) ? "https://www.google.com/s2/favicons?sz=128&domain_url=" + encodeURIComponent(h.origin) : ""; } catch (e) { return ""; } };
 let view = "home", homeScroll = 0, cameFromHome = false;
-const normalize = d => { d.works = (d.works || []).map(w => ({title: w.title || "", img: w.img || "", desc: w.desc || "",
-  links: Array.isArray(w.links) ? w.links : (w.url && w.url !== "#" ? [{name: "", url: w.url, icon: ""}] : [])})); return d; };
+const toLinks = x => Array.isArray(x.links) ? x.links : (x.url && x.url !== "#" ? [{name: "", url: x.url, icon: ""}] : []);
+const normalize = d => {
+  d.works = (d.works || []).map(w => ({title: w.title || "", img: w.img || "", desc: w.desc || "", links: toLinks(w)}));
+  d.gallery = (d.gallery || []).map(g => ({title: g.title || "", img: g.img || "", desc: g.desc || "", detail: g.detail || "", links: toLinks(g)}));
+  return d;
+};
 const pic = (src, alt, eager) => { const i = el("img"); i.src = /^(https?:\/\/|\/)/.test(src) ? src : ""; i.alt = alt || ""; i.loading = eager ? "eager" : "lazy"; return i; };
 const reveal = im => { const on = () => im.classList.add("on"); if (im.complete && im.naturalWidth) on(); else im.addEventListener("load", on, {once: true}); };
 let rendered = false;
@@ -218,9 +223,8 @@ function render() {
   }, n => n + "번째 작품");
 
   $("galleryDesc").textContent = data.galleryDesc || ""; $("galleryDesc").hidden = !data.galleryDesc;
-  fillLoop(loops.gallery, data.gallery, g => {
-    const cls = "tile" + (g.img ? " hasimg" : ""), li = el("li");
-    const a = g.url && g.url !== "#" ? link(el("a", cls), g.url) : el("div", cls);
+  fillLoop(loops.gallery, data.gallery, (g, i) => {
+    const li = el("li"), a = el("a", "tile" + (g.img ? " hasimg" : "")); a.href = "#port-" + i;
     if (g.img) a.appendChild(pic(g.img, g.title));
     a.appendChild(el("span", "", g.title)); li.appendChild(a);
     if (g.desc) li.appendChild(el("p", "cap", g.desc));
@@ -229,19 +233,19 @@ function render() {
   $("contact").textContent = "문의 " + data.contact;
   route();
 }
-function buildDetail(w) {
+function buildDetail(w, text, wide) {
   const d = $("dBody"); d.replaceChildren(); d.className = "din";
-  const t = el("div", "dthumb"); if (w.img) t.appendChild(pic(w.img, w.title, true)); d.appendChild(t);
+  const t = el("div", "dthumb" + (wide ? " wide" : "")); if (w.img) t.appendChild(pic(w.img, w.title, true)); d.appendChild(t);
   d.appendChild(el("h2", "dtitle", w.title));
   const links = (w.links || []).filter(p => p.url && p.url !== "#");
   if (links.length) { const ul = el("ul", "iconrow dlinks"); links.forEach(p => ul.appendChild(iconItem(p))); d.appendChild(ul); }
-  if (w.desc) d.appendChild(el("p", "ddesc", w.desc));
+  if (text) d.appendChild(el("p", "ddesc", text));
 }
 function route() {
-  const m = /^#work-(\d+)$/.exec(location.hash), w = m && data.works[+m[1]];
+  const m = /^#(work|port)-(\d+)$/.exec(location.hash), kind = m && m[1], w = m && (kind === "work" ? data.works : data.gallery)[+m[2]];
   if (w) {
     if (view !== "detail") homeScroll = window.scrollY;
-    $("home").hidden = true; $("detail").hidden = false; buildDetail(w);
+    $("home").hidden = true; $("detail").hidden = false; buildDetail(w, kind === "work" ? w.desc : w.detail, kind === "port");
     if (view !== "detail") window.scrollTo(0, 0);
     view = "detail"; document.title = (w.title || "작품") + " · " + data.name;
   } else {
@@ -304,6 +308,7 @@ const loops = {
 (function slider() {
   const ws = $("works"), W = loops.works;
   ws.addEventListener("click", e => { if (e.target.closest("a.banner")) cameFromHome = true; });
+  $("gallery").addEventListener("click", e => { if (e.target.closest("a.tile")) cameFromHome = true; });
   window.addEventListener("resize", () => Object.values(loops).forEach(L => L.place(L.cur)));
 
   /* 런칭 작품만 2.5초 자동 슬라이드 — 손댄 뒤 4초, 마우스를 올려 둔 동안, 화면 밖/다른 탭일 때는 멈춤 */
@@ -424,13 +429,16 @@ const CARDS = {
       b.appendChild(lw);
       b.appendChild(labeled("상세 설명", input(it, "desc", "작품 설명", {area: true, rows: 5})));
     }},
-  gallery: {blank: {title: "", url: "", img: "", desc: ""},
+  gallery: {blank: {title: "", img: "", desc: "", detail: "", links: []},
     build: (b, it, nm) => {
-      b.appendChild(labeled("제목", input(it, "title", "제목", {on: v => { nm.textContent = v || "(제목 없음)"; }})));
-      b.appendChild(labeled("링크 주소", input(it, "url", "https://링크 주소", {type: "url"})));
-      b.appendChild(labeled("썸네일", picker(it, "img")));
+      b.appendChild(labeled("제목 (상세페이지에 큰 글자로 표시)", input(it, "title", "제목", {on: v => { nm.textContent = v || "(제목 없음)"; }})));
+      b.appendChild(labeled("썸네일 (가로 16:9)", picker(it, "img")));
       const d = input(it, "desc", "썸네일 아래에 표시될 짧은 설명", {area: true, rows: 2}); d.maxLength = 100;
-      b.appendChild(labeled("짧은 설명 (선택 · 100자까지)", d));
+      b.appendChild(labeled("짧은 설명 (선택 · 목록의 썸네일 아래 · 100자까지)", d));
+      const lw = labeled("링크 (여러 개 가능)", linkList(it.links = it.links || []));
+      lw.insertBefore(el("p", "hint", "주소만 넣으면 파비콘이 자동으로 나와요. 동그란 아이콘을 누르면 직접 올릴 수 있어요."), lw.children[1]);
+      b.appendChild(lw);
+      b.appendChild(labeled("상세 설명 (상세페이지에 표시)", input(it, "detail", "자세한 설명", {area: true, rows: 5})));
     }}
 };
 function cardList(key) {
